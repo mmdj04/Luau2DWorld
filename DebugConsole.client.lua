@@ -144,6 +144,13 @@ sPad.PaddingBottom = UDim.new(0, 4)
 sPad.Parent = scroll
 
 local lineCounter = 0
+local autoScroll = true
+
+scroll.Scrolling:Connect(function()
+	local pos = scroll.CanvasPosition.Y
+	local max = scroll.AbsoluteCanvasSize.Y - scroll.AbsoluteSize.Y
+	autoScroll = pos >= max - 5
+end)
 
 local function addLine(text, color)
 	lineCounter += 1
@@ -175,7 +182,9 @@ local function addLine(text, color)
 		table.remove(allLines, 1)
 	end
 
-	scroll.CanvasPosition = Vector2.new(0, scroll.AbsoluteCanvasSize.Y)
+	if autoScroll then
+		scroll.CanvasPosition = Vector2.new(0, scroll.AbsoluteCanvasSize.Y)
+	end
 end
 
 local function formatArgs(...)
@@ -216,24 +225,83 @@ toggleBtn.MouseButton1Click:Connect(function()
 	toggleBtn.Text = panel.Visible and "X" or ">"
 end)
 
+local copyPopup
+
+local function hideCopyPopup()
+	if copyPopup and copyPopup.Parent then
+		copyPopup:Destroy()
+	end
+	copyPopup = nil
+end
+
 copyBtn.MouseButton1Click:Connect(function()
+	hideCopyPopup()
+
 	local text = table.concat(allLines, "\n")
 
+	local copied = false
 	pcall(function()
 		if setclipboard then
 			setclipboard(text)
-		elseif syn then
-			syn.clipboard.set(text)
-		else
-			local temp = Instance.new("BindableEvent")
-			temp.Name = "CopyEvent"
-			temp.Parent = game:GetService("CoreGui")
-			temp:Fire(text)
-			temp:Destroy()
+			copied = true
 		end
 	end)
 
-	addLine("[SYSTEM] Console copied to clipboard!", Color3.fromRGB(0, 200, 100))
+	if copied then
+		addLine("[SYSTEM] Copied to clipboard!", Color3.fromRGB(0, 200, 100))
+		return
+	end
+
+	local popup = Instance.new("TextBox")
+	popup.Size = UDim2.fromScale(0.9, 0.5)
+	popup.Position = UDim2.fromScale(0.05, 0.25)
+	popup.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+	popup.TextColor3 = Color3.fromRGB(200, 200, 200)
+	popup.Text = text
+	popup.TextEditable = false
+	popup.TextWrapped = true
+	popup.TextScaled = false
+	popup.TextSize = 10
+	popup.Font = Enum.Font.Code
+	popup.MultiLine = true
+	popup.ClearTextOnFocus = false
+	popup.BorderSizePixel = 0
+	popup.ZIndex = 10100
+	popup.Parent = panel
+
+	local popupCorner = Instance.new("UICorner")
+	popupCorner.CornerRadius = UDim.new(0, 8)
+	popupCorner.Parent = popup
+
+	local popupStroke = Instance.new("UIStroke")
+	popupStroke.Color = Color3.fromRGB(0, 255, 100)
+	popupStroke.Thickness = 2
+	popupStroke.Parent = popup
+
+	local closeBtn = Instance.new("TextButton")
+	closeBtn.Size = UDim2.new(0, 28, 0, 28)
+	closeBtn.Position = UDim2.fromScale(1, 0)
+	closeBtn.AnchorPoint = Vector2.new(1, 0)
+	closeBtn.BackgroundColor3 = Color3.fromRGB(160, 40, 40)
+	closeBtn.Text = "X"
+	closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	closeBtn.TextScaled = true
+	closeBtn.Font = Enum.Font.GothamBold
+	closeBtn.BorderSizePixel = 0
+	closeBtn.ZIndex = 10101
+	closeBtn.Parent = popup
+
+	local closeCorner = Instance.new("UICorner")
+	closeCorner.CornerRadius = UDim.new(0, 4)
+	closeCorner.Parent = closeBtn
+
+	closeBtn.MouseButton1Click:Connect(function()
+		hideCopyPopup()
+	end)
+
+	copyPopup = popup
+
+	addLine("[SYSTEM] Select the text above and copy (hold finger on text)", Color3.fromRGB(0, 200, 255))
 end)
 
 clearBtn.MouseButton1Click:Connect(function()

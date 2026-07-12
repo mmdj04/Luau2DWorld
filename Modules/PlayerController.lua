@@ -41,8 +41,8 @@ export type PlayerController = {
 	_isMobile: boolean,
 }
 
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
+const UserInputService = game:GetService("UserInputService")
+const RunService = game:GetService("RunService")
 
 local PlayerController = {}
 PlayerController.__index = PlayerController
@@ -170,67 +170,189 @@ function PlayerController.new(playerFrame: Frame, worldGen: any, tileSize: numbe
 		}
 	end
 
-	self._inputBeganConn = UserInputService.InputBegan:Connect(function(input: InputObject, gameProcessed: boolean): ()
+	const ctrl = self
+
+	self._inputBeganConn = UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then return end
-		self:_onInputBegan(input)
+		if input == nil then return end
+
+		local inputType = nil
+		local ok, result = pcall(function()
+			return input.UserInputType
+		end)
+		if ok then
+			inputType = result
+		else
+			return
+		end
+
+		if inputType == Enum.UserInputType.Keyboard then
+			const code = input.KeyCode
+			if code == Enum.KeyCode.A or code == Enum.KeyCode.Left then
+				ctrl.Keys.Left = true
+			elseif code == Enum.KeyCode.D or code == Enum.KeyCode.Right then
+				ctrl.Keys.Right = true
+			elseif code == Enum.KeyCode.W or code == Enum.KeyCode.Up then
+				ctrl.Keys.Up = true
+			elseif code == Enum.KeyCode.S or code == Enum.KeyCode.Down then
+				ctrl.Keys.Down = true
+			elseif code == Enum.KeyCode.LeftShift or code == Enum.KeyCode.RightShift then
+				ctrl.Keys.Sprint = true
+			elseif code == Enum.KeyCode.Space then
+				ctrl.Keys.Jump = true
+				ctrl.Keys.Up = true
+			end
+		end
 	end)
 
-	self._inputEndedConn = UserInputService.InputEnded:Connect(function(input: InputObject, gameProcessed: boolean): ()
-		self:_onInputEnded(input)
+	self._inputEndedConn = UserInputService.InputEnded:Connect(function(input, gameProcessed)
+		if gameProcessed then return end
+		if input == nil then return end
+
+		local inputType = nil
+		local ok, result = pcall(function()
+			return input.UserInputType
+		end)
+		if ok then
+			inputType = result
+		else
+			return
+		end
+
+		if inputType == Enum.UserInputType.Keyboard then
+			const code = input.KeyCode
+			if code == Enum.KeyCode.A or code == Enum.KeyCode.Left then
+				ctrl.Keys.Left = false
+			elseif code == Enum.KeyCode.D or code == Enum.KeyCode.Right then
+				ctrl.Keys.Right = false
+			elseif code == Enum.KeyCode.W or code == Enum.KeyCode.Up then
+				ctrl.Keys.Up = false
+			elseif code == Enum.KeyCode.S or code == Enum.KeyCode.Down then
+				ctrl.Keys.Down = false
+			elseif code == Enum.KeyCode.LeftShift or code == Enum.KeyCode.RightShift then
+				ctrl.Keys.Sprint = false
+			elseif code == Enum.KeyCode.Space then
+				ctrl.Keys.Jump = false
+				ctrl.Keys.Up = false
+			end
+		end
 	end)
 
-	self._inputChangedConn = UserInputService.InputChanged:Connect(function(input: InputObject, gameProcessed: boolean): ()
-		self:_onInputChanged(input)
+	self._inputChangedConn = UserInputService.InputChanged:Connect(function(input, gameProcessed)
+		if input == nil then return end
+
+		if not ctrl._isMobile then return end
+		if not ctrl.Mobile.active then return end
+
+		local inputType = nil
+		local ok, result = pcall(function()
+			return input.UserInputType
+		end)
+		if ok then
+			inputType = result
+		else
+			return
+		end
+
+		if inputType == Enum.UserInputType.Touch then
+			ctrl.Mobile.currentPos = input.Position
+
+			const delta = ctrl.Mobile.currentPos - ctrl.Mobile.startPos
+			const dist = delta.Magnitude
+			const maxDist = JOYSTICK_SIZE * 0.5
+
+			if dist > JOYSTICK_DEADZONE then
+				const clampedDist = math.min(dist, maxDist)
+				const angle = math.atan2(delta.Y, delta.X)
+				const knobX = math.cos(angle) * clampedDist / maxDist
+				const knobY = math.sin(angle) * clampedDist / maxDist
+
+				ctrl.Mobile.joystickKnob.Position = UDim2.fromScale(0.5 + knobX * 0.4, 0.5 + knobY * 0.4)
+
+				const threshold = 0.3
+				ctrl.Keys.Left = knobX < -threshold
+				ctrl.Keys.Right = knobX > threshold
+			else
+				ctrl.Mobile.joystickKnob.Position = UDim2.fromScale(0.5, 0.5)
+				ctrl.Keys.Left = false
+				ctrl.Keys.Right = false
+			end
+		end
 	end)
 
-	if self._isMobile then
-		self:_setupMobileInput()
+	if ctrl._isMobile then
+		ctrl:_setupMobileInput()
 	end
 
-	self:_updateFramePosition()
+	ctrl:_updateFramePosition()
 
-	return self
+	return ctrl
 end
 
 function PlayerController:_setupMobileInput(self: PlayerController): ()
 	const mobile = self.Mobile
+	const ctrl = self
 
-	mobile.joystickFrame.InputBegan:Connect(function(input: InputObject)
-		if input.UserInputType == Enum.UserInputType.Touch then
+	mobile.joystickFrame.InputBegan:Connect(function(input)
+		if input == nil then return end
+
+		local ok, result = pcall(function()
+			return input.UserInputType
+		end)
+		if not ok then return end
+
+		if result == Enum.UserInputType.Touch then
 			mobile.active = true
-			mobile.touchId = input.KeyCode
 			mobile.startPos = input.Position
 			mobile.currentPos = input.Position
 		end
 	end)
 
-	mobile.joystickFrame.InputEnded:Connect(function(input: InputObject)
-		if input.UserInputType == Enum.UserInputType.Touch then
+	mobile.joystickFrame.InputEnded:Connect(function(input)
+		if input == nil then return end
+
+		local ok, result = pcall(function()
+			return input.UserInputType
+		end)
+		if not ok then return end
+
+		if result == Enum.UserInputType.Touch then
 			mobile.active = false
-			mobile.touchId = nil
 			mobile.joystickKnob.Position = UDim2.fromScale(0.5, 0.5)
 			mobile.startPos = Vector2.new(0, 0)
 			mobile.currentPos = Vector2.new(0, 0)
-			self.Keys.Left = false
-			self.Keys.Right = false
+			ctrl.Keys.Left = false
+			ctrl.Keys.Right = false
 		end
 	end)
 
-	mobile.jumpFrame.InputBegan:Connect(function(input: InputObject)
-		if input.UserInputType == Enum.UserInputType.Touch then
+	mobile.jumpFrame.InputBegan:Connect(function(input)
+		if input == nil then return end
+
+		local ok, result = pcall(function()
+			return input.UserInputType
+		end)
+		if not ok then return end
+
+		if result == Enum.UserInputType.Touch then
 			mobile.jumpPressed = true
-			mobile.jumpTouchId = input.KeyCode
-			self.Keys.Jump = true
-			self.Keys.Up = true
+			ctrl.Keys.Jump = true
+			ctrl.Keys.Up = true
 		end
 	end)
 
-	mobile.jumpFrame.InputEnded:Connect(function(input: InputObject)
-		if input.UserInputType == Enum.UserInputType.Touch then
+	mobile.jumpFrame.InputEnded:Connect(function(input)
+		if input == nil then return end
+
+		local ok, result = pcall(function()
+			return input.UserInputType
+		end)
+		if not ok then return end
+
+		if result == Enum.UserInputType.Touch then
 			mobile.jumpPressed = false
-			mobile.jumpTouchId = nil
-			self.Keys.Jump = false
-			self.Keys.Up = false
+			ctrl.Keys.Jump = false
+			ctrl.Keys.Up = false
 		end
 	end)
 end
@@ -244,75 +366,6 @@ function PlayerController:Destroy(self: PlayerController): ()
 	end
 	if self._inputChangedConn then
 		self._inputChangedConn:Disconnect()
-	end
-end
-
-function PlayerController:_onInputBegan(self: PlayerController, input: InputObject): ()
-	if input.UserInputType == Enum.UserInputType.Keyboard then
-		const code = input.KeyCode
-		if code == Enum.KeyCode.A or code == Enum.KeyCode.Left then
-			self.Keys.Left = true
-		elseif code == Enum.KeyCode.D or code == Enum.KeyCode.Right then
-			self.Keys.Right = true
-		elseif code == Enum.KeyCode.W or code == Enum.KeyCode.Up then
-			self.Keys.Up = true
-		elseif code == Enum.KeyCode.S or code == Enum.KeyCode.Down then
-			self.Keys.Down = true
-		elseif code == Enum.KeyCode.LeftShift or code == Enum.KeyCode.RightShift then
-			self.Keys.Sprint = true
-		elseif code == Enum.KeyCode.Space then
-			self.Keys.Jump = true
-			self.Keys.Up = true
-		end
-	end
-end
-
-function PlayerController:_onInputEnded(self: PlayerController, input: InputObject): ()
-	if input.UserInputType == Enum.UserInputType.Keyboard then
-		const code = input.KeyCode
-		if code == Enum.KeyCode.A or code == Enum.KeyCode.Left then
-			self.Keys.Left = false
-		elseif code == Enum.KeyCode.D or code == Enum.KeyCode.Right then
-			self.Keys.Right = false
-		elseif code == Enum.KeyCode.W or code == Enum.KeyCode.Up then
-			self.Keys.Up = false
-		elseif code == Enum.KeyCode.S or code == Enum.KeyCode.Down then
-			self.Keys.Down = false
-		elseif code == Enum.KeyCode.LeftShift or code == Enum.KeyCode.RightShift then
-			self.Keys.Sprint = false
-		elseif code == Enum.KeyCode.Space then
-			self.Keys.Jump = false
-			self.Keys.Up = false
-		end
-	end
-end
-
-function PlayerController:_onInputChanged(self: PlayerController, input: InputObject): ()
-	if self._isMobile and self.Mobile.active then
-		if input.UserInputType == Enum.UserInputType.Touch then
-			self.Mobile.currentPos = input.Position
-
-			const delta = self.Mobile.currentPos - self.Mobile.startPos
-			const dist = delta.Magnitude
-			const maxDist = JOYSTICK_SIZE * 0.5
-
-			if dist > JOYSTICK_DEADZONE then
-				const clampedDist = math.min(dist, maxDist)
-				const angle = math.atan2(delta.Y, delta.X)
-				const knobX = math.cos(angle) * clampedDist / maxDist
-				const knobY = math.sin(angle) * clampedDist / maxDist
-
-				self.Mobile.joystickKnob.Position = UDim2.fromScale(0.5 + knobX * 0.4, 0.5 + knobY * 0.4)
-
-				const threshold = 0.3
-				self.Keys.Left = knobX < -threshold
-				self.Keys.Right = knobX > threshold
-			else
-				self.Mobile.joystickKnob.Position = UDim2.fromScale(0.5, 0.5)
-				self.Keys.Left = false
-				self.Keys.Right = false
-			end
-		end
 	end
 end
 
