@@ -1,0 +1,9 @@
+*.luauc
+*.rbxl
+*.rbxlx
+*.rbxm
+*.rbxmx
+*.pdb
+*.map
+Thumbs.db
+.DS_Store
