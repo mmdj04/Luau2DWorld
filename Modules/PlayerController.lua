@@ -281,7 +281,7 @@ function PlayerController.new(playerFrame: Frame, worldGen: any, tileSize: numbe
 	end)
 
 	if ctrl._isMobile then
-		ctrl:_setupMobileInput()
+		setupMobileInput(ctrl)
 	end
 
 	ctrl:_updateFramePosition()
@@ -289,9 +289,8 @@ function PlayerController.new(playerFrame: Frame, worldGen: any, tileSize: numbe
 	return ctrl
 end
 
-function PlayerController:_setupMobileInput(self: PlayerController): ()
-	const mobile = self.Mobile
-	const ctrl = self
+local function setupMobileInput(ctrl)
+	const mobile = ctrl.Mobile
 
 	mobile.joystickFrame.InputBegan:Connect(function(input)
 		if input == nil then return end

@@ -146,7 +146,7 @@ sPad.Parent = scroll
 local lineCounter = 0
 local autoScroll = true
 
-scroll.Scrolling:Connect(function()
+scroll:GetPropertyChangedSignal("CanvasPosition"):Connect(function()
 	local pos = scroll.CanvasPosition.Y
 	local max = scroll.AbsoluteCanvasSize.Y - scroll.AbsoluteSize.Y
 	autoScroll = pos >= max - 5
