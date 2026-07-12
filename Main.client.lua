@@ -76,7 +76,7 @@ const caveGen = CaveGenerator.new(worldGen, CONFIG.seed)
 caveGen:generateAll(0, CONFIG.worldWidth)
 
 const spawnX = CONFIG.worldWidth // 2
-var spawnY = 1
+local spawnY = 1
 for y = 0, CONFIG.worldHeight - 1 do
 	const tile = worldGen:getTile(spawnX, y)
 	if tile == WorldGenerator.Tiles.GRASS or tile == WorldGenerator.Tiles.DIRT then
@@ -118,14 +118,14 @@ controller.TileY = spawnY
 controller.PixelX = spawnX * CONFIG.tileSize
 controller.PixelY = spawnY * CONFIG.tileSize
 
-var health = 100.0
+local health = 100.0
 const maxHealth = 100.0
-var minimapTimer = 0.0
+local minimapTimer = 0.0
 const MINIMAP_UPDATE_INTERVAL = 0.5
 
 const exploredTiles: { [string]: boolean } = {}
 
-var lastTime = os.clock()
+local lastTime = os.clock()
 
 RunService.Heartbeat:Connect(function(): ()
 	const now = os.clock()

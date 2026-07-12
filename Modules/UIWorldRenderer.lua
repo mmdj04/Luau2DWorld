@@ -90,7 +90,7 @@ local function renderChunk(
 	const endTileX = math.min(startTileX + chunkSize - 1, math.ceil(viewMaxX // tileSize))
 	const endTileY = math.min(startTileY + chunkSize - 1, math.ceil(viewMaxY // tileSize))
 
-	var activeCount = 0
+	local activeCount = 0
 
 	for tileY = baseTileY, endTileY do
 		for tileX = baseTileX, endTileX do
@@ -140,7 +140,7 @@ local function updateVisibleChunks(
 	const maxChunkY = math.ceil((camY + screenH + margin * tileSize) // (chunkSize * tileSize))
 
 	const maxChunks = state.config.maxChunksVisible
-	var count = 0
+	local count = 0
 
 	for chunkY = minChunkY, maxChunkY do
 		for chunkX = minChunkX, maxChunkX do
@@ -149,7 +149,7 @@ local function updateVisibleChunks(
 			end
 
 			const key = getChunkKey(chunkX, chunkY)
-			var chunk = state.chunkMap[key]
+			local chunk = state.chunkMap[key]
 
 			if not chunk then
 				chunk = createChunk(chunkX, chunkY, state.config)
@@ -299,7 +299,7 @@ function UIWorldRenderer.getTileAtScreen(
 end
 
 function UIWorldRenderer.getActiveChunkCount(self: any): number
-	var count = 0
+	local count = 0
 	for _, chunk in self.visibleChunks do
 		if chunk.active > 0 then
 			count += 1
@@ -309,7 +309,7 @@ function UIWorldRenderer.getActiveChunkCount(self: any): number
 end
 
 function UIWorldRenderer.getFramePoolSize(self: any): number
-	var total = 0
+	local total = 0
 	for _, chunk in self.chunks do
 		total += #chunk.frames
 	end

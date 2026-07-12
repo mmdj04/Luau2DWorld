@@ -193,7 +193,7 @@ function UITools.smoothDamp(
 	const change = current - target
 	const temp = (velocity[1] + omega * change) * dt
 	velocity[1] = (velocity[1] - omega * temp) * exp
-	var output = target + (change + temp) * exp
+	local output = target + (change + temp) * exp
 	if (target - current > 0) == (output > target) then
 		output = target
 		velocity[1] = (output - target) / dt
