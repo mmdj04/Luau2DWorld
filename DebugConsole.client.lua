@@ -222,7 +222,7 @@ copyBtn.MouseButton1Click:Connect(function()
 	pcall(function()
 		if setclipboard then
 			setclipboard(text)
-		elseif syn and syn clipboard then
+		elseif syn then
 			syn.clipboard.set(text)
 		else
 			local temp = Instance.new("BindableEvent")

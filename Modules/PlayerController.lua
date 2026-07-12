@@ -375,8 +375,8 @@ function PlayerController:update(self: PlayerController, dt: number): ()
 		self.VelocityY = 0
 	end
 
-	var newX = self.PixelX + self.VelocityX * dt
-	var newY = self.PixelY + self.VelocityY * dt
+	local newX = self.PixelX + self.VelocityX * dt
+	local newY = self.PixelY + self.VelocityY * dt
 
 	if self.VelocityX > 0 then
 		const rightEdge = newX + self.TileSize
