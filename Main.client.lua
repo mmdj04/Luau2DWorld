@@ -2,14 +2,50 @@
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
 
-const player = Players.LocalPlayer
-const playerGui = player:WaitForChild("PlayerGui")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+pcall(function()
+	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
+end)
+
+pcall(function()
+	local playerModule = player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule", 2)
+	if playerModule then
+		local module = require(playerModule)
+		if module.Disable then
+			module:Disable()
+		elseif module.GetControls then
+			local controls = module:GetControls()
+			if controls.Disable then
+				controls:Disable()
+			end
+		end
+	end
+end)
+
+pcall(function()
+	local character = player.Character
+	if character then
+		for _, part in character:GetDescendants() do
+			if part:IsA("BasePart") then
+				part.Transparency = 1
+			elseif part:IsA("Decal") then
+				part.Transparency = 1
+			end
+		end
+	end
+end)
 
 const screenGui = Instance.new("ScreenGui")
 screenGui.Name = "WorldGame"
 screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.IgnoreGuiInset = true
+screenGui.DisplayOrder = 999
 screenGui.Parent = playerGui
 
 const modules = script:WaitForChild("Modules")
@@ -31,29 +67,47 @@ const CONFIG = {
 	chunkSize = 16,
 }
 
-const worldFrame = UITools.createFrame({
-	Name = "WorldViewport",
-	Size = {x = 1, y = 1},
-	Color = Color3.fromRGB(135, 206, 235),
-	BorderSizePixel = 0,
-	Parent = screenGui,
-})
+const worldFrame = Instance.new("Frame")
+worldFrame.Name = "WorldViewport"
+worldFrame.Size = UDim2.fromScale(1, 1)
+worldFrame.Position = UDim2.fromScale(0, 0)
+worldFrame.BackgroundColor3 = Color3.fromRGB(135, 206, 235)
+worldFrame.BorderSizePixel = 0
+worldFrame.ZIndex = 1
 worldFrame.ClipsDescendants = true
+worldFrame.Parent = screenGui
 
 const playerSize = CONFIG.tileSize * 1.5
-const playerFrame = UITools.createFrame({
-	Name = "Player",
-	Size = {x = 0, y = 0},
-	Color = Color3.fromRGB(220, 50, 50),
-	BorderSizePixel = 0,
-	ZIndex = 10,
-	Parent = worldFrame,
-})
+const playerFrame = Instance.new("Frame")
+playerFrame.Name = "Player"
 playerFrame.Size = UDim2.fromOffset(playerSize, playerSize)
-UITools.createFrame({Name = "EyeLeft", Size = {x = 0, y = 0}, Color = Color3.fromRGB(255, 255, 255), BorderSizePixel = 0, ZIndex = 11, Parent = playerFrame, Position = {x = 0.2, y = 0.2}}).Size = UDim2.fromOffset(3, 3)
-UITools.createFrame({Name = "EyeRight", Size = {x = 0, y = 0}, Color = Color3.fromRGB(255, 255, 255), BorderSizePixel = 0, ZIndex = 11, Parent = playerFrame, Position = {x = 0.6, y = 0.2}}).Size = UDim2.fromOffset(3, 3)
-local eyeLeft = playerFrame:WaitForChild("EyeLeft")
-local eyeRight = playerFrame:WaitForChild("EyeRight")
+playerFrame.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+playerFrame.BorderSizePixel = 0
+playerFrame.ZIndex = 10
+playerFrame.Parent = worldFrame
+
+const playerCorner = Instance.new("UICorner")
+playerCorner.CornerRadius = UDim.new(0.3, 0)
+playerCorner.Parent = playerFrame
+
+const eyeLeft = Instance.new("Frame")
+eyeLeft.Name = "EyeLeft"
+eyeLeft.Size = UDim2.fromOffset(3, 3)
+eyeLeft.Position = UDim2.fromScale(0.2, 0.2)
+eyeLeft.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+eyeLeft.BorderSizePixel = 0
+eyeLeft.ZIndex = 11
+eyeLeft.Parent = playerFrame
+
+const eyeRight = Instance.new("Frame")
+eyeRight.Name = "EyeRight"
+eyeRight.Size = UDim2.fromOffset(3, 3)
+eyeRight.Position = UDim2.fromScale(0.6, 0.2)
+eyeRight.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+eyeRight.BorderSizePixel = 0
+eyeRight.ZIndex = 11
+eyeRight.Parent = playerFrame
+
 const eyeCorner = Instance.new("UICorner")
 eyeCorner.CornerRadius = UDim.new(1, 0)
 eyeCorner.Parent = eyeLeft
@@ -138,9 +192,8 @@ RunService.Heartbeat:Connect(function(): ()
 	camera:update(px, py, dt)
 	const cam = camera:getOffset()
 
-	local absW, absH
-	absW = worldFrame.AbsoluteSize.X
-	absH = worldFrame.AbsoluteSize.Y
+	const absW = worldFrame.AbsoluteSize.X
+	const absH = worldFrame.AbsoluteSize.Y
 
 	worldRenderer:render(cam.x, cam.y, absW, absH)
 
@@ -152,10 +205,9 @@ RunService.Heartbeat:Connect(function(): ()
 		for i = 1, chunk.active do
 			const frame = chunk.frames[i]
 			if frame.Visible then
-				local tileX: number, tileY: number = 0, 0
 				const framePos = frame.Position
-				tileX = (framePos.X.Offset // CONFIG.tileSize + chunk.x * CONFIG.chunkSize)
-				tileY = (framePos.Y.Offset // CONFIG.tileSize + chunk.y * CONFIG.chunkSize)
+				const tileX = (framePos.X.Offset // CONFIG.tileSize + chunk.x * CONFIG.chunkSize)
+				const tileY = (framePos.Y.Offset // CONFIG.tileSize + chunk.y * CONFIG.chunkSize)
 				const surfaceY = worldGen:_getSurfaceHeight(tileX)
 				const darkness = lighting:getDarkness(tileX, tileY, surfaceY)
 				if darkness > 0.01 then
