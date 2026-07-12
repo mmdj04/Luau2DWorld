@@ -18,6 +18,7 @@ Coloca **tudo** aqui dentro numa pasta chamada `Luau2DWorld`:
 
 ```
 StarterGui
+├── DebugConsole.client.lua  ← LocalScript (INDEPENDENTE, directamente aqui)
 └── Luau2DWorld
     ├── Main.client.lua        ← LocalScript (entry point)
     └── Modules
@@ -33,6 +34,8 @@ StarterGui
         ├── Noise.lua          ← ModuleScript
         └── TileRenderer.lua   ← ModuleScript (legado)
 ```
+
+**NOTA:** O `DebugConsole.client.lua` vai DIRECTAMENTE em `StarterGui`, fora da pasta `Luau2DWorld`. Isto garante que funciona mesmo que o resto do jogo quebre.
 
 ---
 
